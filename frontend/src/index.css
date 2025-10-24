@@ -1,0 +1,467 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Define light theme variables by default */
+:root {
+  --background-color: #ffffff;
+  --text-color: #333333;
+  --sidebar-background: #f4f4f8;
+  --sidebar-border: #dddddd;
+  --header-background: #eeeeee;
+  --header-border: #dddddd;
+  --button-background: #007bff;
+  --button-text: #ffffff;
+  --link-color: #007bff;
+  --footer-background: #0a0a2a;
+  --footer-text: #cccccc;
+  --footer-link: #aaaaaa;
+  --input-border: #cccccc;
+  --box-background: #f4f4f8; /* For response boxes, etc. */
+  --box-border: #dddddd;
+}
+
+/* Define dark theme overrides */
+body.dark-theme { /* Apply overrides when body has .dark-theme class */
+  --background-color: #121212;
+  --text-color: #e0e0e0;
+  --sidebar-background: #1e1e1e;
+  --sidebar-border: #444444;
+  --header-background: #2a2a2a;
+  --header-border: #444444;
+  --button-background: #0d6efd; /* Slightly brighter blue */
+  --button-text: #ffffff;
+  --link-color: #60a5fa; /* Lighter blue for links */
+  --footer-background: #050515; /* Even darker blue */
+  --footer-text: #aaaaaa;
+  --footer-link: #888888;
+  --input-border: #555555;
+  --box-background: #2a2a2a;
+  --box-border: #444444;
+}
+
+/* Apply variables to base elements */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  margin: 0;
+  font-family: sans-serif; /* Or your preferred font */
+  transition: background-color 0.2s, color 0.2s; /* Smooth transition */
+}
+
+/* Add more global styles using variables as needed */
+a {
+  color: var(--link-color);
+}
+
+input, select, textarea {
+    border: 1px solid var(--input-border);
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+button {
+    background-color: var(--button-background);
+    color: var(--button-text);
+    border: none;
+    cursor: pointer;
+}
+
+
+/* --- Footer Styles --- */
+.app-footer {
+  background: var(--footer-background);
+  color: var(--footer-text);
+  padding: 10px 20px;
+  text-align: center;
+  margin-top: auto;
+  font-size: 0.9em;
+  border-top: 1px solid var(--sidebar-border); /* Use existing variable */
+}
+
+.footer-link {
+  color: var(--footer-link);
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+.footer-separator {
+  margin: 0 5px;
+  color: var(--sidebar-border);
+}
+
+/* --- Chat Bubble Styles --- */
+.chat-bubble {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--background-color); /* CHANGED: Use theme's white bg */
+  color: var(--text-color);           /* CHANGED: Use theme's text color */
+  border: 1px solid var(--sidebar-border); /* ADDED: Border to make it visible */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px; /* CHANGED: Slightly larger for the robot */
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+  transition: transform 0.2s ease-out;
+}
+
+.chat-bubble:hover {
+  transform: scale(1.1);
+}
+
+/* --- Chat Window Styles --- */
+.chat-window {
+  position: fixed;
+  bottom: 90px; /* Position above the bubble */
+  right: 20px;
+  width: 350px;
+  height: 450px;
+  background: var(--background-color); /* Use theme background */
+  border: 1px solid var(--sidebar-border); /* Use theme border */
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+}
+
+.chat-header {
+  background: var(--button-background);
+  color: var(--button-text);
+  padding: 10px 15px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* <-- ADD THIS */
+}
+
+.chat-close-button {
+  background: none;
+  border: none;
+  color: var(--button-text);
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.chat-history {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 15px;
+  background: var(--box-background); /* Use theme box background */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* <-- ADD THIS */
+}
+
+.chat-message-container {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.chat-message {
+  padding: 8px 12px;
+  border-radius: 15px;
+  max-width: 80%;
+  word-wrap: break-word;
+  line-height: 1.5; /* <-- ADD THIS FOR READABILITY */
+}
+
+.user-message {
+  background: var(--button-background);
+  color: var(--button-text);
+  margin-left: auto; /* Aligns to the right */
+}
+
+.bot-message {
+  background: var(--header-background); /* Use theme header bg */
+  color: var(--text-color);
+  border: 1px solid var(--sidebar-border);
+  margin-right: auto; /* Aligns to the left */
+}
+
+.chat-input-area {
+  display: flex;
+  gap: 5px;
+  padding: 10px;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+/* Use existing global styles for input/button, but make input full-width */
+.chat-input-area input {
+  flex-grow: 1;
+  padding: 8px;
+  font-size: 0.9rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* <-- ADD THIS */
+  /* 'input' tag styles from index.css will apply */
+}
+
+.chat-input-area button {
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  /* 'button' tag styles from index.css will apply */
+}
+
+
+/* --- Page & Form Styles --- */
+.page-container {
+  max-width: 900px;
+}
+
+.form-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+/* Base styles for all inputs */
+.form-input {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid var(--input-border);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  border-radius: 4px;
+  font-family: sans-serif;
+}
+
+/* Specific style for textareas */
+.form-input.textarea {
+  min-height: 150px;
+  font-family: monospace;
+}
+
+/* Base button style (uses existing button variables) */
+.btn {
+  padding: 10px 15px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary blue button */
+.btn-primary {
+  background-color: var(--button-background);
+  color: var(--button-text);
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+/* Success green button */
+.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+.btn-success:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+/* Red dangerous button */
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+/* --- Content & Status Boxes --- */
+.content-box {
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--box-background);
+  border: 1px solid var(--box-border);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  min-height: 100px;
+}
+
+.status-message {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.status-success {
+  background: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.status-error {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+/* Dark theme overrides for status boxes */
+body.dark-theme .status-success {
+  background: #1a2f24;
+  border-color: #2a5a40;
+  color: #a6d7b9;
+}
+
+body.dark-theme .status-error {
+  background: #2f1d21;
+  border-color: #5a3035;
+  color: #f1b0b7;
+}
+
+/* --- Table Styles for DataAnalysisPage --- */
+.table-container {
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid var(--box-border);
+  border-radius: 4px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  background: var(--header-background);
+  padding: 8px 12px;
+  border: 1px solid var(--box-border);
+  text-align: left;
+  font-weight: 600;
+}
+.table td {
+  padding: 8px 12px;
+  border: 1px solid var(--box-border);
+}
+
+/* --- Sidebar Link Styles (3D Button + Icon) --- */
+.sidebar-link {
+  /* For Icon and Text Alignment */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  /* Basic Properties */
+  text-decoration: none;
+  font-size: 1.05em;
+  font-weight: 500;
+  color: var(--text-color);
+  
+  /* Button Shape */
+  background-color: var(--sidebar-background);
+  padding: 12px 15px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--sidebar-border);
+  
+  /* 3D Effect */
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-link:hover {
+  /* "Lift" effect */
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: var(--background-color);
+}
+
+.sidebar-link:active {
+  /* "Press" effect */
+  transform: translateY(1px);
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+
+/* --- MAIN LAYOUT STYLES --- */
+
+/* This is the new flex container for desktop */
+.main-layout {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+/* This is the new sidebar style for desktop */
+.sidebar {
+  width: 240px;
+  background: var(--sidebar-background);
+  padding: 20px;
+  border-right: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+/* This is the new content style for desktop */
+.content-area {
+  flex-grow: 1;
+  padding: 20px 40px;
+  overflow-y: auto;
+}
+
+/* --- RESPONSIVE STYLES --- 
+This applies to any screen 768px wide or smaller
+*/
+@media (max-width: 768px) {
+  
+  /* Stacks the sidebar and content vertically */
+  .main-layout {
+    flex-direction: column;
+  }
+
+  /* Makes the sidebar full-width and not scrollable */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    overflow-y: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--sidebar-border);
+    padding: 15px; /* Reduce padding on mobile */
+  }
+
+  /* Reduces the padding for the main content area */
+  .content-area {
+    padding: 20px;
+  }
+
+  /* Makes sidebar h1 smaller on mobile */
+  .sidebar h1 {
+    font-size: 1.5em;
+    margin-bottom: 20px !important;
+  }
+}

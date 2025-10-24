@@ -1,0 +1,23 @@
+# frontend/Dockerfile.dev
+
+# Use the official Node.js image as the base
+FROM node:18-alpine
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package.json and package-lock.json first to leverage Docker cache
+COPY frontend/package*.json ./
+
+# Install project dependencies
+RUN npm install
+
+# Copy the rest of your frontend application code
+COPY frontend/ .
+
+# Expose the port the React dev server runs on
+EXPOSE 3000
+
+# The command to start the React development server
+CMD ["npm", "start"]
+

@@ -1,0 +1,56 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    command: tail -f /dev/null
+    environment: # <-- ADD THIS SECTION
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./backend:/code
+      - ./backend/data:/code/data
+      - ./backend/loras:/loras
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./backend:/code
+      - ./backend/data:/code/data
+      - ./backend/loras:/loras
+      - ./ollama_entrypoint.sh:/ollama_entrypoint.sh # <-- Verify this line
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    # --- ADD THIS LINE TO OVERRIDE THE DEFAULT ENTRYPOINT ---
+    entrypoint: ["/ollama_entrypoint.sh"]
+volumes:
+  ollama_data:
+
