@@ -238,7 +238,20 @@ body,
   background: #c0392b;
 }
 
+.login-btn {
+  background: #3c80e7;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s ease;
+}
 
+.login-btn:hover {
+  background: #2baac0;
+}
 /* Menu button */
 .menu-toggle {
   background: #383a39;
