@@ -13,7 +13,6 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGfm from "remark-gfm";
 import "./ModelManagementPage.css";
-import axios from "axios";
 
 /* -------------------------------
    🧠 Modal: Model + LoRA Selection
@@ -79,7 +78,7 @@ const ModelManagementPage = () => {
   const [loadedModel, setLoadedModel] = useState("granite4:tiny-h");
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentChatId, setCurrentChatId] = useState(null); // ✅ defined
+  const [currentChatId] = useState(null); // ✅ defined
   const outputAreaRef = useRef(null);
 
   // === Fetch Models and LoRAs ===

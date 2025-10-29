@@ -1,16 +1,21 @@
-# frontend/Dockerfile.dev
+# --- Development Dockerfile for React ---
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy only package files first for caching
+# Copy package manifests
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Ensure dependencies + Auth0 SDK
+RUN npm install --legacy-peer-deps && \
+    npm install @auth0/auth0-react --save && \
+    echo "✅ Installed dependencies and Auth0 SDK"
 
-# Copy the rest of the app
+# Copy source code
 COPY . .
 
-# Start React dev server
+# Expose the React dev server port
+EXPOSE 3000
+
+# Run development server
 CMD ["npm", "start"]

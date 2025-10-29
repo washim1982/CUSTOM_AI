@@ -1,11 +1,13 @@
 // frontend/src/services/api.js
 import axios from "axios";
-
+import { getAccessTokenSilently } from "@auth0/auth0-react";
 // ✅ Unified API Base
 //const API_BASE = process.env.REACT_APP_API_BASE || "/api"; ---for PROD
 //const API_BASE = process.env.REACT_APP_API_BASE || "/api"; //---for DEV localhost
 
 const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
+
+
 
 export const API_BASE = isDev
   ? "http://localhost:8001/api" // ✅ backend dev server
@@ -19,6 +21,14 @@ const apiClient = axios.create({
   },
 });
 
+
+export const setAuthInterceptor = (getAccessToken) => {
+  apiClient.interceptors.request.use(async (config) => {
+    const token = await getAccessToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  });
+};
 // -------------------- 🧠 CHAT HISTORY --------------------
 export const listChats = () => apiClient.get("/chat-history");
 
@@ -78,8 +88,8 @@ export const getModels = async () => {
 
 export const loadModel = async (modelName, loraName = null) => {
   return apiClient.post("/models/load", {
-    model: modelName,
-    lora: loraName,
+    model_name: modelName,
+    adapter_name: loraName,
   });
 };
 

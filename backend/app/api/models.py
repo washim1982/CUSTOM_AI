@@ -5,7 +5,8 @@ from fastapi.responses import StreamingResponse # Import this
 from typing import List, AsyncGenerator, Optional
 from pydantic import BaseModel
 import json
-
+from fastapi import Depends
+from app.core.auth0_middleware import auth0_guard
 from app.services import ollama_service
 
 router = APIRouter()
@@ -17,7 +18,7 @@ class LoadRequest(BaseModel):
     model_name: str
     adapter_name: Optional[str] = None
 # --- THIS IS THE ENDPOINT THAT'S NOT BEING FOUND ---
-@router.get("/")
+@router.get("/", dependencies=[Depends(auth0_guard)])
 def get_available_models():
     try:
         logging.info("GET /api/models called")
