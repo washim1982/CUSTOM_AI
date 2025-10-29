@@ -1,20 +1,28 @@
-# backend/requirements.txt
+# --- Core Framework ---
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.9
 
-fastapi
-uvicorn[standard]
-python-multipart
-sqlalchemy
-#psycopg2-binary
-passlib[bcrypt]
-python-jose[cryptography]
-ollama
-pandas
-openpyxl
-argon2-cffi
-python-docx
-pypdf
-matplotlib
-requests
-# Add torch for GPU-accelerated training
---extra-index-url https://download.pytorch.org/whl/cu126
-torch
+# --- Database & ORM ---
+sqlalchemy==2.0.35
+
+# --- Auth & Security ---
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+argon2-cffi==23.1.0
+
+# --- File Processing & Data ---
+pandas==2.2.3
+openpyxl==3.1.5
+python-docx==1.1.2
+pypdf==5.0.1
+
+# --- ML / Charting ---
+matplotlib==3.9.2
+requests==2.32.3
+
+# --- Ollama Integration ---
+ollama==0.3.3
+
+# --- Optional lightweight PyTorch (CPU only) ---
+torch==2.5.1 --extra-index-url https://download.pytorch.org/whl/cpu

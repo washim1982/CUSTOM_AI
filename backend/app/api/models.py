@@ -1,5 +1,5 @@
 # backend/app/api/models.py
-
+import logging 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse # Import this
 from typing import List, AsyncGenerator, Optional
@@ -20,7 +20,9 @@ class LoadRequest(BaseModel):
 @router.get("/")
 def get_available_models():
     try:
+        logging.info("GET /api/models called")
         models = ollama_service.list_local_models()
+        logging.info(f"Models returned: {models}")
         return models
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Could not connect to Ollama service: {e}")
@@ -44,13 +46,14 @@ class PromptRequest(BaseModel):
     max_tokens: int = 512
 
 @router.post("/prompt/")
+@router.post("/prompt")
 async def run_model_prompt(request: PromptRequest) -> StreamingResponse:
     """
     Runs a prompt against a specified model.
     This endpoint will stream the response back to the client.
     """
     try:
-        stream = await ollama_service.run_prompt(
+        stream = ollama_service.run_prompt(
             model_name=request.model_name,
             prompt_text=request.prompt_text,
             max_tokens=request.max_tokens,
@@ -58,13 +61,8 @@ async def run_model_prompt(request: PromptRequest) -> StreamingResponse:
         
         # We need a generator function to wrap the stream for StreamingResponse
         async def response_generator():
-            try:
-                for chunk in stream:
-                    yield json.dumps({"response": chunk['response']}) + "\n"
-            except Exception as e:
-                logging.error(f"Error during stream generation: {e}")
-                yield json.dumps({"error": "An error occurred during streaming."}) + "\n"
-        
+            async for chunk in stream:
+                yield json.dumps({"response": chunk["response"]}) + "\n"
         return StreamingResponse(response_generator(), media_type="application/x-ndjson")
         
     except Exception as e:

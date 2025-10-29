@@ -35,6 +35,7 @@ function SettingsPage() {
   useEffect(() => {
     document.body.classList.remove('light-theme', 'dark-theme');
     document.body.classList.add(theme === 'dark' ? 'dark-theme' : 'light-theme');
+    document.body.classList.toggle('light-theme', theme === 'light');
     localStorage.setItem('appTheme', theme);
     fetchLoras();
   }, [theme]);
@@ -79,7 +80,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="page-container" style={{ maxWidth: '700px' }}>
+    <div className="page-content" style={{ maxWidth: '700px' }}>
       <h2>Settings</h2>
 
       <SettingsSection title="User Profile">

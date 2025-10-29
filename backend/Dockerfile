@@ -1,49 +1,33 @@
-# backend/Dockerfile
+# ---- Base ----
+FROM python:3.11-slim AS base
 
-# 1. Use an official NVIDIA CUDA base image compatible with modern GPUs
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# 2. Set up the environment and install Python
-ENV PYTHON_VERSION=3.11
-RUN apt-get update && apt-get install -y \
-    python${PYTHON_VERSION} \
-    python3-pip \
-    build-essential libffi-dev python3-dev \
-    sqlite3 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# System deps (curl for healthcheck; build tools only if needed)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
-    
-# Install system packages + Ollama CLI
-RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y python3 python3-pip git curl && \
-    curl -fsSL https://ollama.com/install.sh | sh
+WORKDIR /app
+
+# Copy application
+COPY . .
+
+# Install deps
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir gunicorn uvicorn
 
 
-# --- Stage 2: Final Image ---
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
-ENV PYTHON_VERSION=3.11
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python${PYTHON_VERSION} \
-    python3-pip \
-    libffi7 \
-    sqlite3 \ 
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Check ollama version (optional)
-RUN pip install --no-cache-dir ollama==0.6.0
-
-# Set python3.11 as the default python command
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON_VERSION} 1
-
-WORKDIR /code
-
-# 3. Copy and install Python requirements
-COPY ./requirements.txt /code/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-
-COPY ./app /code/app
-
-# 4. Expose the port and run the application
+# Optional CORS domain injection: if CORS_ORIGINS provided, your app.main can read it.
+# EXPOSE is informational; behind Nginx
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Healthcheck executed by docker-compose
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 CMD curl -fsS http://localhost:8000/api/health || exit 1
+
+# Gunicorn + Uvicorn workers for production
+# Tweak workers based on CPU cores: workers=2-4 is a good start
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "2", "-b", "0.0.0.0:8000", "app.main:app"]

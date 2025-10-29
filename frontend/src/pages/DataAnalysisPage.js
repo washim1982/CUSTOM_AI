@@ -56,7 +56,8 @@ function DataAnalysisPage() {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container" 
+    style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', textAlign: "center" }}>
       <h2>Excel Upload & Charting</h2>
       
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px' }}>

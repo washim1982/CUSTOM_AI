@@ -64,7 +64,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="page-container" style={{ maxWidth: '400px' }}>
+    <div className="page-content" style={{ maxWidth: '500px' }}>
       <h2>{isRegistering ? 'Register' : 'Login'}</h2>
       <form onSubmit={handleSubmit} className="form-layout">
         

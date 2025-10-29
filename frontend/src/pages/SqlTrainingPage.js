@@ -77,7 +77,7 @@ function SqlTrainingPage() {
   };
   
   return (
-    <div className="page-container">
+    <div className="page-content" style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center" }}>
       <h2>SQL Training Data Generation</h2>
       <p>Provide a database schema as a JSON object to generate synthetic question-answer pairs for training a SQL model.</p>
       

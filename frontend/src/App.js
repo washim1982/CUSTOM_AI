@@ -1,142 +1,131 @@
 // frontend/src/App.js
-import React, { useState , useEffect} from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Sidebar from "./components/Sidebar";
+import ModelManagementPage from "./pages/ModelManagementPage";
+import SettingsPage from "./pages/SettingsPage";
+import AuthPage from "./pages/LoginPage";
+import CustomModelTraining from "./pages/TrainingPage";
+import SqlTrainer from "./pages/SqlTrainingPage";
+import OcrPage from "./pages/OcrPage";
+import FileAnalyticsPage from "./pages/DataAnalysisPage";
+import "./App.css";
 
-// --- Import Icons ---
-import { 
-  FaKey, 
-  FaDatabase, 
-  FaFileCsv, 
-  FaImage, 
-  FaCog 
-} from 'react-icons/fa';
-import { BsBoxes, BsTools } from 'react-icons/bs';
+function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [userName, setUserName] = useState("Guest"); // You can dynamically fetch this from auth later
 
-// --- Import Pages ---
-import LoginPage from './pages/LoginPage';
-import ModelManagementPage from './pages/ModelManagementPage';
-import TrainingPage from './pages/TrainingPage';
-import SqlTrainingPage from './pages/SqlTrainingPage';
-import DataAnalysisPage from './pages/DataAnalysisPage';
-import OcrPage from './pages/OcrPage';
-import SettingsPage from './pages/SettingsPage';
-import ContactPage from './pages/ContactPage';
-import PrivacyPage from './pages/PrivacyPage';
-import DmcaPage from './pages/DmcaPage';
-import TermsPage from './pages/TermsPage';
-import FaqPage from './pages/FaqPage';
-import CopyrightPage from './pages/CopyrightPage';
-// --- Import Components ---
-import ChatBubble from './components/ChatBubble';
-import ChatWindow from './components/ChatWindow';
-import Footer from './components/Footer';
-
-// This component contains the main layout and uses hooks
-function MainApp() {
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const { userEmail, logout } = useAuth();
-  const navigate = useNavigate();
-
-  // --- Styles ---
-  // All styles are now in index.css except for these layout styles
-  const appContainerStyles = { display: 'flex', flexDirection: 'column', minHeight: '100vh', fontFamily: 'sans-serif' };
-  const mainLayoutStyles = { display: 'flex', flexGrow: 1, overflow: 'hidden' };
-  const sidebarStyles = { width: '240px', background: 'var(--sidebar-background)', padding: '20px', borderRight: '1px solid var(--sidebar-border)', flexShrink: 0, overflowY: 'auto' };
-  const contentStyles = { flexGrow: 1, padding: '20px 40px', overflowY: 'auto' };
-  const headerStyles = { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '10px 20px', background: 'var(--header-background)', borderBottom: '1px solid var(--header-border)', height: '40px' };
-  const welcomeTextStyles = { marginRight: '15px', fontSize: '0.9em' };
-  const logoutButtonStyles = { padding: '5px 10px', fontSize: '0.8em', cursor: 'pointer', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' };
-  
-  // Apply theme on initial load
+  // Load saved theme from localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('appTheme') || 'light';
-    document.body.classList.remove('light-theme', 'dark-theme');
-    document.body.classList.add(savedTheme === 'dark' ? 'dark-theme' : 'light-theme');
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    document.body.classList.toggle("light-theme", savedTheme === "light");
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
+  // Save theme change
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+    document.body.classList.toggle("light-theme", theme === "light");
+  }, [theme]);
+
+
+  //const YourWelcomeComponent = ({ userName }) => {
+
+  // --- Add this logic ---
+  const getGreeting = () => {
+    const currentHour = new Date().getHours();
+
+    if (currentHour < 12) {
+      return "Good Morning"; // ☀️ Before 12 PM
+    } else if (currentHour < 18) {
+      return "Good Afternoon"; // 🌇 12 PM to 6 PM
+    } else {
+      return "Good Evening"; // 🌙 After 6 PM
+    }
   };
 
-  return (
-    <div style={appContainerStyles}>
-      <div className="main-layout">
-        <nav className="sidebar">
-          <h1 style={{ marginBottom: '40px' }}>AI Toolkit</h1>
-          
-          {/* --- Sidebar Links CHANGED to include icons --- */}
-          <Link to="/auth" className="sidebar-link">
-            <FaKey /> <span>Authentication</span>
-          </Link>
-          <Link to="/models" className="sidebar-link">
-            <BsBoxes /> <span>Model Hub</span>
-          </Link>
-          <Link to="/training" className="sidebar-link">
-            <BsTools /> <span>Custom Model Training</span>
-          </Link>
-          <Link to="/sql-trainer" className="sidebar-link">
-            <FaDatabase /> <span>SQL Trainer</span>
-          </Link>
-          <Link to="/analysis" className="sidebar-link">
-            <FaFileCsv /> <span>File Analytics</span>
-          </Link>
-          <Link to="/ocr" className="sidebar-link">
-            <FaImage /> <span>Image OCR</span>
-          </Link>
-          <Link to="/settings" className="sidebar-link">
-            <FaCog /> <span>Settings</span>
-          </Link>
-        </nav>
+  const greeting = getGreeting();
 
-        {/* Wrapper for Header + Main Content */}
-        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
-          {userEmail && (
-            <div style={headerStyles}>
-              <span style={welcomeTextStyles}>Welcome, {userEmail}!</span>
-              <button onClick={handleLogout} style={logoutButtonStyles}>Logout</button>
-            </div>
-          )}
-          <main className="content-area"> {/* Content Area */}
+  return (
+    <Router>
+      <div className={`app-container ${theme}`}>
+        {/* === HEADER SECTION === */}
+        <header className="app-header">
+          <button
+            className="header-toggle-btn"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label="Toggle Sidebar"
+          >
+            ☰
+          </button>
+
+          {/* <div className="header-right">
+            <span className="welcome-text">Welcome, {userName}</span>
+            <button className="logout-btn">Logout</button>
+          </div> */}
+          <div className="header-center">
+            <h2>Imaginarium AI</h2>
+          </div>
+          <div className="header-right">
+            <span className="welcome-text">{greeting}, {userName}</span>
+            <button
+              className="logout-btn"
+              onClick={() => {
+                // Clear local storage and session data
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                sessionStorage.clear();
+
+                // Optional: Clear cookies if used
+                document.cookie.split(";").forEach((c) => {
+                  document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+                });
+
+                // Redirect to login page
+                window.location.href = "/auth";
+              }}
+        >
+          Logout
+        </button>
+      </div>
+        </header>
+
+        {/* === MAIN LAYOUT === */}
+        <div className="main-layout">
+          <Sidebar isOpen={isSidebarOpen} />
+
+          <main className="main-content">
             <Routes>
-              {/* Routes */}
-              <Route path="/" element={<Navigate replace to="/auth" />} />
-              <Route path="/auth" element={<LoginPage />} />
+              <Route path="/" element={<ModelManagementPage />} />
               <Route path="/models" element={<ModelManagementPage />} />
-              <Route path="/training" element={<TrainingPage />} />
-              <Route path="/sql-trainer" element={<SqlTrainingPage />} />
-              <Route path="/analysis" element={<DataAnalysisPage />} />
+              <Route path="/settings" element={<SettingsPage setTheme={setTheme} theme={theme} />} />
+              <Route path="/auth" element={<AuthPage  />} />
+              <Route path="/training" element={<CustomModelTraining />} />
+              <Route path="/sql-trainer" element={<SqlTrainer />} />
               <Route path="/ocr" element={<OcrPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/dmca" element={<DmcaPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="/faq" element={<FaqPage />} />
-              <Route path="/copyright" element={<CopyrightPage />} />
-              <Route path="*" element={<Navigate replace to="/auth" />} />
+              <Route path="/analysis" element={<FileAnalyticsPage />} />
             </Routes>
+
+            {/* === GLOBAL FOOTER === */}
+            <footer className="app-footer">
+              <p>
+                © {new Date().getFullYear()} Custom AI Toolkit |{" "}
+                <a href="/privacy">Privacy Policy</a> |{" "}
+                <a href="/terms">Terms</a>
+              </p>
+            </footer>
           </main>
         </div>
       </div>
-
-      {/* Chat Bubble & Window */}
-      <ChatBubble onClick={() => setIsChatOpen(true)} />
-      {isChatOpen && <ChatWindow onClose={() => setIsChatOpen(false)} />}
-
-      <Footer />
-    </div>
-  );
-}
-
-// This is the main exported component that provides the Router context
-function App() {
-  return (
-    <Router>
-      <MainApp />
     </Router>
   );
 }
 
 export default App;
+
+
+
+        

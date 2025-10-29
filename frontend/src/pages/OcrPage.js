@@ -1,77 +1,92 @@
 // frontend/src/pages/OcrPage.js
-import React, { useState } from 'react';
-import { performOcr } from '../services/api';
+import React, { useState } from "react";
+import { performOcr } from "../services/api";
 
 function OcrPage() {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [extractedText, setExtractedText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [file, setFile] = useState(null);
+  const [mode, setMode] = useState("ocr"); // "ocr" or "describe"
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState("");
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
-    setExtractedText('');
-    setError('');
-  };
+  const handleOcr = async (e) => {
+    e.preventDefault();
+    if (!file) return;
 
-  const handleOcrSubmit = () => {
-    if (!selectedFile) {
-      setError('Please select an image file first.');
-      return;
+    setLoading(true);
+    setResult("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // 👇 Pass selected mode to backend
+      const response = await performOcr(formData, mode);
+      setResult(response.data.extracted_text);
+    } catch (error) {
+      console.error("OCR error:", error);
+      setResult("❌ Failed to process image.");
+    } finally {
+      setLoading(false);
     }
-    setError('');
-    setIsLoading(true);
-    setExtractedText('');
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    performOcr(formData)
-      .then(res => {
-        setExtractedText(res.data.extracted_text);
-      })
-      .catch(err => {
-        setError(err.response?.data?.detail || 'Failed to perform OCR.');
-        console.error("OCR Error:", err);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
   };
 
   return (
-    <div className="page-container" style={{ maxWidth: '700px' }}>
-      <h2>Image OCR</h2>
-      <p>Upload an image (e.g., PNG, JPG) to extract text using the LLaVA model.</p>
-      
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px' }}>
+    <div style={{ maxWidth: 800, margin: "40px auto", textAlign: "center" }}>
+      <h2>Image OCR / Description</h2>
+
+      <form onSubmit={handleOcr}>
         <input
           type="file"
-          onChange={handleFileChange}
-          accept="image/png, image/jpeg, image/webp"
-          className="form-input"
-          style={{ flexGrow: 1 }}
+          accept="image/*"
+          onChange={(e) => setFile(e.target.files[0])}
+          style={{ marginBottom: "12px" }}
         />
-        <button
-          onClick={handleOcrSubmit}
-          disabled={isLoading || !selectedFile}
-          className="btn btn-primary"
-        >
-          {isLoading ? 'Processing...' : 'Extract Text'}
-        </button>
-      </div>
 
-      {error && <p className="status-message status-error">{error}</p>}
-
-      {(extractedText || isLoading) && (
-        <div>
-          <h3>Extracted Text:</h3>
-          <div className="content-box">
-            {extractedText}
-            {isLoading && <p style={{ color: 'var(--link-color)' }}>Processing image...</p>}
-          </div>
+        <div style={{ marginBottom: "12px" }}>
+          <label htmlFor="ocrMode" style={{ marginRight: "8px" }}>
+            Mode:
+          </label>
+          <select
+            id="ocrMode"
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+            style={{ padding: "6px 12px" }}
+          >
+            <option value="ocr">Extract Text Only</option>
+            <option value="describe">Detailed Description</option>
+          </select>
         </div>
-      )}
+
+        <button
+          type="submit"
+          disabled={!file || loading}
+          style={{
+            padding: "10px 20px",
+            background: "#007bff",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          {loading ? "Processing..." : "Upload & Process"}
+        </button>
+      </form>
+
+      {/* Display the result */}
+      <div
+        style={{ marginTop: "20px", textAlign: "left", whiteSpace: "pre-wrap" }}
+      >
+        {loading && <p>Processing image ({mode} mode)...</p>}
+        {!loading && result && (
+          <>
+            <h3>
+              Result ({mode === "ocr" ? "Extracted Text" : "Description"}):
+            </h3>
+            <p>{result}</p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
