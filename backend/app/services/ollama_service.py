@@ -1,195 +1,120 @@
-import ollama
-import inspect
-import logging
-import requests
-import os
-import tempfile
-import json
+# backend/app/services/ollama_service.py
+import logging, os, requests, inspect
 from fastapi import HTTPException
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any, List
 
-logging.basicConfig(level=logging.INFO)
+# OLLAMA_HOST like "http://ollama-dev:11434"
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://ollama:11434")
 
-# ---- Ollama server endpoint ----
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://ollama:11434").rstrip("/")
-OLLAMA_LORA_DIR = "/loras"          # Shared mount inside Ollama container
-BACKEND_LORA_DIR = "/code/loras"    # Same volume mount inside backend container
+MINIMAX_API_KEY = os.getenv("MINIMAX_API_KEY")  # You must set this in env
+MINIMAX_ENDPOINT = os.getenv(
+    "MINIMAX_ENDPOINT",
+    "https://api.minimax.chat/v1/text/chatcompletion"
+)
 
-current_loaded_model: Optional[str] = None  # Track loaded model
+GRANITE_MODEL = os.getenv("GRANITE_MODEL", "granite4:tiny-h")
 
 
-# ----------------------------------------------------------------------
-# Helper: Generic Ollama HTTP Request
-# ----------------------------------------------------------------------
-def _ollama_request(method: str, endpoint: str, **kwargs) -> requests.Response:
-    """Wrapper for Ollama HTTP requests with error handling."""
-    # ✅ Always ensure /api prefix
-    if not endpoint.startswith("/api/"):
-        endpoint = f"/api{endpoint if endpoint.startswith('/') else '/' + endpoint}"
-
-    url = f"{OLLAMA_HOST}{endpoint}"
-    logging.info(f"🌐 Request → {method.upper()} {url}")
-
+def _ollama_request(method: str, path: str, **kwargs):
+    """Helper to call Ollama, raise HTTPException on error."""
+    url = f"{OLLAMA_HOST}{path}"
     try:
-        r = requests.request(method, url, timeout=600, **kwargs)
-        if not r.ok:
-            logging.error(f"❌ Ollama API error {r.status_code}: {r.text}")
-            raise HTTPException(status_code=r.status_code, detail=r.text)
-        return r
-    except requests.RequestException as e:
-        logging.error(f"❌ Ollama request to {url} failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Ollama server unreachable at {OLLAMA_HOST}")
+        r = requests.request(method, url, timeout=60, **kwargs)
+    except Exception as e:
+        logging.error(f"Ollama request failed: {e}")
+        raise HTTPException(status_code=503, detail="Ollama unreachable")
+
+    if not r.ok:
+        logging.error(f"Ollama error {r.status_code}: {r.text}")
+        raise HTTPException(status_code=r.status_code, detail=r.text)
+
+    return r
 
 
-# ----------------------------------------------------------------------
-# List Models
-# ----------------------------------------------------------------------
 def list_local_models() -> List[Dict[str, Any]]:
-    """List all models available on the connected Ollama server."""
-    try:
-        url = f"{OLLAMA_HOST}/api/tags"
-        logging.info(f"🔍 Requesting Ollama models from {url}")
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-        models = data.get("models", [])
-        logging.info(f"✅ Found {len(models)} models on Ollama host.")
-        return [{"name": m.get("name")} for m in models if m.get("name")]
-
-    except requests.exceptions.ConnectionError as e:
-        logging.error(f"❌ Could not connect to Ollama service: {e}")
-        raise HTTPException(status_code=503, detail="Ollama service unavailable")
-    except requests.exceptions.RequestException as e:
-        logging.error(f"❌ Ollama HTTP error: {e}")
-        raise HTTPException(status_code=502, detail=f"Ollama HTTP error: {e}")
-    except ValueError as e:
-        logging.error(f"❌ Failed to parse Ollama response: {e}")
-        raise HTTPException(status_code=500, detail="Invalid response from Ollama")
-    except Exception as e:
-        logging.error(f"❌ Unexpected error in list_local_models: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    """
+    Return [{name: 'granite4:tiny-h'}, ...] from Ollama.
+    Safe for public use.
+    """
+    r = _ollama_request("GET", "/api/tags")
+    data = r.json()
+    out = []
+    for m in data.get("models", []):
+        name = m.get("name")
+        if name:
+            out.append({"name": name})
+    # We *want* granite to exist. If somehow it's missing, still include it.
+    if not any(m["name"] == GRANITE_MODEL for m in out):
+        out.insert(0, {"name": GRANITE_MODEL})
+    return out
 
 
-# ----------------------------------------------------------------------
-# Delete Model
-# ----------------------------------------------------------------------
-async def delete_ollama_model(model_name: str):
-    """Delete a model from Ollama (if temporary)."""
-    try:
-        _ollama_request("DELETE", "/api/delete", json={"name": model_name})
-        logging.info(f"🗑️ Deleted model: {model_name}")
-    except Exception as e:
-        logging.warning(f"⚠️ Could not delete model {model_name}: {e}")
+def run_granite_prompt(prompt_text: str, max_tokens: int = 256) -> str:
+    """
+    Call Ollama /api/generate for granite. Return final text (not streaming).
+    """
+    body = {
+        "model": GRANITE_MODEL,
+        "prompt": prompt_text,
+        "options": {"num_predict": max_tokens},
+        "stream": False,
+    }
+    r = _ollama_request("POST", "/api/generate", json=body)
+    data = r.json()
+    # Ollama returns {'response': "..."} for non-stream
+    return data.get("response", "").strip()
 
 
-# ----------------------------------------------------------------------
-# Create or Load Model
-# ----------------------------------------------------------------------
-async def set_active_model(base_model_name: str, adapter_name: Optional[str] = None):
-    """Load a base model or create a temporary LoRA-combined model via Ollama HTTP API."""
-    global current_loaded_model
+def run_minimax_prompt(prompt_text: str, max_tokens: int = 256, user: Dict[str,Any] | None = None) -> str:
+    """
+    Call MiniMax cloud.
+    NOTE: You MUST edit this to match the actual MiniMax M2 chat completion API format.
+    We'll mock a generic role-based body like OpenAI-style.
+    """
+    if not MINIMAX_API_KEY:
+        # fallback: if not configured, just use granite so UI doesn't break
+        logging.warning("MINIMAX_API_KEY not set, falling back to granite.")
+        return run_granite_prompt(prompt_text, max_tokens)
 
-    new_model_to_load = base_model_name
-    temp_model_name = None
-    apply_adapter = False
-    if adapter_name in (None, "", "null", "string"):
-        adapter_name = None
-    logging.info(f"🧠 Activating model: {base_model_name}, adapter: {adapter_name}")
-    logging.info(f"Currently loaded: {current_loaded_model}")
-
-    # --- Validate adapter ---
-    if adapter_name:
-        adapter_path_backend = os.path.join(BACKEND_LORA_DIR, adapter_name)
-        adapter_path_ollama = os.path.join(OLLAMA_LORA_DIR, adapter_name)
-
-        if not os.path.exists(adapter_path_backend):
-            raise HTTPException(status_code=404, detail=f"Adapter '{adapter_name}' not found.")
-        size = os.path.getsize(adapter_path_backend)
-        if size < 1 * 1024 * 1024:
-            logging.warning(f"⚠️ Adapter '{adapter_name}' too small ({size} bytes) — likely placeholder, skipping.")
-        else:
-            apply_adapter = True
-
-    # --- Apply adapter ---
-    if apply_adapter:
-        temp_model_name = f"{base_model_name}-with-{adapter_name.split('.')[0]}"
-        new_model_to_load = temp_model_name
-
-        if current_loaded_model == new_model_to_load:
-            logging.info(f"Model {new_model_to_load} already active.")
-            return {"status": "already_loaded", "loaded": new_model_to_load}
-
-        modelfile_content = f"FROM {base_model_name}\nADAPTER {os.path.join(OLLAMA_LORA_DIR, adapter_name)}\n"
-        with tempfile.NamedTemporaryFile("w", delete=False, suffix=".Modelfile") as tmp:
-            tmp.write(modelfile_content)
-            tmp_path = tmp.name
-        try:
-            logging.info(f"🧩 Creating temporary model '{temp_model_name}' via Ollama API...")
-            with open(tmp_path, "r") as f:
-                modelfile = f.read()
-            _ollama_request("POST", "/api/create", json={"name": temp_model_name, "modelfile": modelfile})
-            logging.info(f"✅ Created temporary model '{temp_model_name}' successfully.")
-        except Exception as e:
-            await delete_ollama_model(temp_model_name)
-            raise HTTPException(status_code=500, detail=f"Failed to create temporary model: {e}")
-        finally:
-            os.remove(tmp_path)
-
-    elif adapter_name:
-        logging.info(f"Adapter skipped, using base model '{base_model_name}' only.")
-
-    # --- Load model ---
-    if current_loaded_model == new_model_to_load:
-        return {"status": "already_loaded", "loaded": new_model_to_load}
+    headers = {
+        "Authorization": f"Bearer {MINIMAX_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": "minimax-m2",  # adjust to your actual MiniMax model name
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt_text},
+        ],
+        "max_tokens": max_tokens,
+        "temperature": 0.7,
+    }
 
     try:
-        logging.info(f"⚙️ Loading model '{new_model_to_load}' via Ollama API...")
-        _ollama_request("POST", "/api/generate", json={
-            "model": new_model_to_load,
-            "prompt": ".",
-            "options": {"num_predict": 1},
-            "keep_alive": "5m"
-        })
-        current_loaded_model = new_model_to_load
-        logging.info(f"✅ Model '{new_model_to_load}' is now active.")
-        return {"status": "success", "loaded": new_model_to_load}
-    except Exception as e:
-        logging.error(f"❌ Failed to load model {new_model_to_load}: {e}", exc_info=True)
-        if temp_model_name:
-            await delete_ollama_model(temp_model_name)
-        current_loaded_model = None
-        raise HTTPException(status_code=500, detail=f"Failed to load model {new_model_to_load}")
-
-
-# ----------------------------------------------------------------------
-# Run Prompt
-# ----------------------------------------------------------------------
-async def run_prompt(model_name: str, prompt_text: str, max_tokens: int):
-    """Runs a prompt against the specified model."""
-    global current_loaded_model
-
-    if not current_loaded_model or current_loaded_model != model_name:
-        logging.info(f"Switching active model to {model_name}")
-        await set_active_model(model_name, adapter_name=None)
-
-    try:
-        logging.info(f"🧩 Running prompt on model: {current_loaded_model}")
-        stream = ollama.generate(
-            model=current_loaded_model,
-            prompt=prompt_text,
-            options={'num_predict': max_tokens},
-            keep_alive='5m',
-            stream=True
+        resp = requests.post(MINIMAX_ENDPOINT, json=payload, headers=headers, timeout=60)
+        if resp.status_code != 200:
+            logging.error(f"MiniMax error {resp.status_code}: {resp.text}")
+            raise HTTPException(status_code=502, detail="MiniMax upstream error")
+        data = resp.json()
+        # You MUST adapt this path based on real MiniMax response JSON
+        # I'll assume data["choices"][0]["message"]["content"]
+        content = (
+            data.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
         )
+        return content.strip()
+    except requests.RequestException as e:
+        logging.error(f"MiniMax request failed: {e}")
+        raise HTTPException(status_code=502, detail="MiniMax request failed")
 
-        if inspect.isasyncgen(stream):
-            async for chunk in stream:
-                yield chunk
-        else:
-            for chunk in stream:
-                yield chunk
 
-    except Exception as e:
-        logging.error(f"❌ Error running prompt: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error running prompt: {e}")
+def run_chat(prompt_text: str, max_tokens: int, user: Optional[Dict[str, Any]]) -> str:
+    """
+    Smart router:
+      - no user  -> granite (public)
+      - user     -> minimax (private tier)
+    """
+    if user:
+        return run_minimax_prompt(prompt_text, max_tokens, user=user)
+    return run_granite_prompt(prompt_text, max_tokens)

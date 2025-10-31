@@ -1,38 +1,40 @@
 # backend/app/api/ocr.py
-import logging
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from typing import Dict, Any
 import tempfile
-import shutil
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query
+import os
+import logging
+from app.api.auth import require_auth_user
 from app.services import ollama_service
 
 router = APIRouter()
 
-@router.post("/process-image")
-async def process_image(
-    file: UploadFile = File(...),
-    mode: str = Query("describe", enum=["ocr", "describe"])
-):
+@router.post("/")
+async def run_ocr_endpoint(
+    image: UploadFile = File(...),
+    mode: str = "describe",
+    user = Depends(require_auth_user)
+) -> Dict[str, Any]:
     """
-    Process uploaded image for OCR or descriptive analysis.
-    mode='ocr' → extract readable text.
-    mode='describe' → provide contextual description and visible text.
+    Protected. OCR / Vision description endpoint.
+    We call ollama_service.run_ocr(...) if you have it, else just placeholder.
     """
     try:
-        # Save uploaded file to a temporary location
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            temp_path = tmp.name
+        # write the image to tmp and pass path to service
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(await image.read())
+            tmp_path = tmp.name
 
-        logging.info(f"🖼️ Uploaded image saved to temp: {temp_path} (mode={mode})")
+        # If you kept your old ollama_service.run_ocr() function, call it:
+        if hasattr(ollama_service, "run_ocr"):
+            result_text = ollama_service.run_ocr.__wrapped__(tmp_path, mode) \
+                if hasattr(ollama_service.run_ocr, "__wrapped__") else \
+                ollama_service.run_ocr(tmp_path, mode)
+        else:
+            result_text = "[OCR placeholder: Vision model not integrated]"
 
-        # Call OCR logic with mode
-        text = await ollama_service.run_ocr(temp_path, mode)
-
-        return {"mode": mode, "extracted_text": text}
-
+        os.unlink(tmp_path)
+        return {"text": result_text}
     except Exception as e:
-        logging.error(f"❌ Failed to process image: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to process image: {e}")
-
-    finally:
-        file.file.close()
+        logging.exception("OCR failed")
+        raise HTTPException(status_code=500, detail=str(e))

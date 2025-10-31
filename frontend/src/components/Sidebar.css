@@ -1,11 +1,11 @@
 /* === Default: DARK THEME baseline === */
 body {
-  background-color: #0e0e0e;
+  background-color: #0f0f0f;
   color: #f1f1f1;
 }
 
 .sidebar {
-  background-color: #111;
+  background-color: #0f0f0f;
   color: #f1f1f1;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -20,12 +20,12 @@ body {
 }
 
 .sidebar a:hover {
-  background-color: #1f1f1f;
+  background-color: #0f0f0f;
   color: #00ffc8;
 }
 
 .toggle-btn {
-  background-color: #007a33;
+  background-color: #0f0f0f;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -61,55 +61,6 @@ body.light-theme {
 
 
 
-/* Sidebar container */
-.sidebar {
-  position: left;
-  left: 0;
-  height: calc(100vh - 50px);
-  width: 230px;
-  background: transparent;
-  color: #272626;
-  transition: width 0.3s ease;
-  overflow-y: auto;
-  z-index: 900;
-}
-
-.sidebar.collapsed {
-  width: 70px;
-}
-
-.sidebar-links {
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-  gap: 10px;
-}
-
-.sidebar-links a {
-  display: flex;
-  align-items: center;
-  color: #424040;
-  text-decoration: none;
-  padding: 10px;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-}
-
-.sidebar-links a:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #3b3a3a;
-}
-
-.sidebar-links span {
-  margin-left: 10px;
-  white-space: nowrap;
-  transition: opacity 0.3s ease;
-}
-
-.sidebar.collapsed .sidebar-links span {
-  opacity: 0;
-  pointer-events: none;
-}
 
 /* Chat Section */
 .chat-history {
@@ -168,6 +119,8 @@ body.light-theme {
 .toggle-btn.open {
   background: #004f2f;
 }
+
+
 
 
 /* --- Mobile Responsiveness --- */

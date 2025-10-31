@@ -584,7 +584,7 @@ This applies to any screen 768px wide or smaller
   left: 0;
   height: 100%;
   width: 240px;
-  background: #161b22;
+  background: #0f0f0f;
   color: white;
   transform: translateX(-100%);
   transition: transform 0.3s ease;

@@ -1,531 +1,179 @@
-
-html, body {
+/* === GLOBAL STYLES === */
+body {
   margin: 0;
-  padding: 0;
-  background-color: #0e0e0e; /* full dark background */
+  background-color: #0f0f0f;
   color: white;
-  height: 100%;
+  font-family: "Inter", sans-serif;
   overflow: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-body,
-.sidebar,
-.main-content {
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* === Default (Dark Theme) === */
-.sidebar {
-  background-color: #111 !important;
-  color: #f1f1f1 !important;
-}
-
-.sidebar a {
-  color: #f1f1f1 !important;
-}
-
-.sidebar a:hover {
-  background-color: #222 !important;
-  color: #00ffcc !important;
-}
-
-/* Fix button */
-.toggle-btn {
-  background-color: #008000 !important;
-  color: #fff !important;
-  border: none;
-  border-radius: 6px;
-}
-
-/* === Light Theme === */
-.light-theme .sidebar {
-  background-color: #ffffff !important;
-  color: #000 !important;
-  border-right: 1px solid #ddd;
-}
-
-.light-theme .sidebar a {
-  color: #000 !important;
-}
-
-.light-theme .sidebar a:hover {
-  background-color: #e6e6e6 !important;
-  color: #007bff !important;
-}
-
-.app-footer {
-  background-color: var(--footer-bg);
-  color: var(--footer-text);
-  text-align: center;
-  padding: 0.8rem;
-  font-size: 0.85rem;
-  border-top: 1px solid #222;
-  width: 100%;
-}
-
-.app-footer a {
-  color: var(--footer-link);
+a {
   text-decoration: none;
-  margin: 0 6px;
+  color: inherit;
 }
 
-.app-footer a:hover {
-  text-decoration: underline;
-}
-/* Main layout container */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  background: #0e0e0e;
-  height: 100vh;
-  overflow: hidden;
-  border: none;
-}
-
-/* Sidebar stays fixed on the left */
-.sidebar {
-  /* flex-shrink: 0;
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0; */
-  position: fixed;
-  top: 56px; /* below header */
-  left: 0;
-  height: calc(100vh - 56px);
-  width: 240px;
-  background: #0d0d0d;
-  color: white;
-  transition: width 0.3s ease, transform 0.3s ease;
-  overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 900;
-}
-
-/* Main content area */
-.main-content {
-  margin-top: 50px;
-  margin-left: 230px;
-  padding: 1.5rem;
-  transition: margin-left 0.3s ease;
-}
-
-.main-content.collapsed {
-  margin-left: 70px;
-}
-/* Fix model hub content layout */
-.chat-page-container {
-  background: #0e0e0e;
-  border: none;
-  margin: 0;
-  padding: 0;
-}
-
-
-/* Center inner page content with max width */
-.page-content {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-/* Adjust for collapsed sidebar (if you have collapse logic) */
-.sidebar.collapsed ~ .main-content {
-  margin-left: 70px;
-}
-
-
-/* Responsive */
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
-    padding: 1rem;
-  }
-
-  .page-content {
-    max-width: 100%;
-  }
-}
-
-
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.page-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 2rem;
-}
-
-.page-content {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  background: var(--content-bg, transparent);
-  animation: fadeIn 0.4s ease forwards;
-}
-.prompt-bar-container {
-  width: 100%;
-  max-width: none;
-  padding: 0 1rem;
-}
-
-/* Top header bar */
+/* === HEADER === */
 .app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid #222;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 50px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #1b1b1b;
-  color: #fff;
-  padding: 0 1rem;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  height: 56px;
+  z-index: 1200; /* <-- raise header above sidebar */
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
 .header-toggle-btn {
-  background: #007b3e;
-  color: white;
+  background: none;
   border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.header-toggle-btn:hover {
-  background: #00a04b;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.logout-btn {
-  background: #e74c3c;
-  border: none;
-  color: white;
-  border-radius: 5px;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s ease;
-}
-
-.logout-btn:hover {
-  background: #c0392b;
-}
-
-.login-btn {
-  background: #3c80e7;
-  border: none;
-  color: white;
-  border-radius: 5px;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s ease;
-}
-
-.login-btn:hover {
-  background: #2baac0;
-}
-/* Menu button */
-.menu-toggle {
-  background: #383a39;
-  border: none;
-  border-radius: 8px;
-  color: rgb(96, 91, 145);
-  padding: 0.4rem 0.6rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease-in-out;
-}
-.menu-toggle:hover {
-  background: #161616;
-}
-
-/* Right section (Welcome + Logout) */
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  color: white;
-}
-
-.welcome-text {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.logout-btn {
-  background: #e74c3c;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-.logout-btn:hover {
-  background: #c0392b;
-}
-
-
-.page-description {
-  color: #aaa;
-  font-size: 0.95rem;
-  margin-bottom: 1rem;
-}
-
-.form-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.4rem;
-}
-
-.form-label {
-  font-weight: bold;
-  color: #ccc;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background-color: #1c1c1c;
   color: #fff;
-  outline: none;
-  transition: border 0.2s ease;
-}
-
-.form-input:focus {
-  border-color: #00b37e;
-}
-
-.btn.btn-success {
-  background-color: #007b3e;
-  color: white;
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
+  font-size: 22px;
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn.btn-success:hover {
-  background-color: #00a35c;
-}
-
-/* ===== Animated Toggle Button ===== */
-.header-toggle-btn {
-  background: #1d1f1e;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: transform 0.3s ease, background 0.2s ease;
+  margin-right: 10px;
 }
 
 .header-toggle-btn:hover {
-  background: #4b524e;
+  color: #00ffcc;
 }
 
-/* ✅ Add rotation animation when sidebar is open */
-.header-toggle-btn.rotated {
-  transform: rotate(90deg);
+.header-center h2 {
+  margin: 0;
+  font-weight: 600;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-/* --- Mobile Responsiveness --- */
+.logout-btn,
+.login-btn {
+  background-color: #e74c3c;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
 
-/* Collapse sidebar automatically on small screens */
+.logout-btn:hover,
+.login-btn:hover {
+  background-color: #c0392b;
+}
+
+/* === MAIN LAYOUT === */
+.main-layout {
+  display: flex;
+  height: calc(100vh - 56px);
+  margin-top: 56px; /* push below header */
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* === SIDEBAR === */
+.sidebar {
+  background-color: #0f0f0f;
+  width: 256px;;
+  flex-shrink: 0;
+  border-right: 1px solid #222;
+  transition: transform 0.3s ease, width 0.3s ease;
+  position: relative;
+  z-index: 100; /* keep below header */
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebar-hidden .chat-page-container {
+  /* When the sidebar is hidden, remove the margin */
+  margin-left: 0; 
+}
+
+.app-layout.sidebar-hidden .sidebar {
+  /* The sidebar shrinks to 0 width */
+  width: 0;
+}
+
+/* Collapsed on desktop */
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+/* === MOBILE SIDEBAR (drawer overlay) === */
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
-    top: 56px;
+    top: 56px; /* below header */
+    left: 0;
     height: calc(100vh - 56px);
-    width: 70%;
     transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
-    z-index: 1001;
+    box-shadow: 3px 0 12px rgba(0, 0, 0, 0.5);
+    z-index: 1100;
   }
 
   .sidebar.open {
     transform: translateX(0);
   }
 
-  .main-content {
-    margin-left: 0 !important;
-    padding: 1rem;
+  /* Dim background */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 56px 0 0 0; /* start below header */
+    background: rgba(226, 221, 221, 0.5);
+    z-index: 1005;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
   }
 
-  .app-header {
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 0 1rem;
-  }
-
-  .header-toggle-btn {
-    font-size: 1.5rem;
-    background: transparent;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-
-  /* Chat input area full width */
-  .prompt-bar-container {
-    flex-direction: row;
-    width: 100%;
-    border-radius: 2rem;
-    padding: 0.6rem 1rem;
-  }
-
-  .prompt-footer {
-    padding: 1rem;
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }
 
-/* Ensure footer text scales down gracefully */
-@media (max-width: 480px) {
-  .app-footer p,
-  .app-footer a {
-    font-size: 0.8rem;
-  }
+/* === MAIN CONTENT === */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #0f0f0f;
+  transition: margin-left 0.3s ease;
+  position: relative;
+  padding: 1rem;
+  z-index: 10;
 }
 
-/* === Light Theme Overrides === */
-body.light-theme,
-.light-theme .page-content,
-.light-theme .form-input,
-.light-theme .form-label,
-.light-theme h1,
-.light-theme h2,
-.light-theme h3,
-.light-theme h4,
-.light-theme h5,
-.light-theme h6,
-.light-theme p,
-.light-theme span,
-.light-theme label,
-.light-theme button {
-  color: #000 !important;           /* text black */
-  background-color: #f9f9f9 !important;  /* soft light background */
+/* === FOOTER === */
+.app-footer {
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  color: #999;
+  border-top: 1px solid #222;
+  background: #111;
 }
 
-/* Keep form elements visible */
-.light-theme input,
-.light-theme select,
-.light-theme textarea {
-  color: #000 !important;
-  background-color: #fff !important;
-  border: 1px solid #ccc !important;
-}
-
-/* Buttons contrast */
-.light-theme .btn,
-.light-theme button {
-  background-color: #007bff !important;
-  color: #fff !important;
-}
-
-
-
-/* === Global Light Theme Styles === */
-body.light-theme {
-  background-color: #f7f8fa !important; /* full-page background */
-  color: #000 !important;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-
-
-/* Header + Footer */
-.light-theme .app-header,
-.light-theme .app-footer {
-  background-color: #ffffff !important;
-  color: #000 !important;
-  border-top: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
-}
-
-/* Page Content */
-.light-theme .main-content,
-.light-theme .page-content {
-  background-color: #fafafa !important;
-  color: #000 !important;
-  box-shadow: none;
-}
-
-/* Forms, Cards, Panels */
-.light-theme .form-group,
-.light-theme .form-layout,
-.light-theme input,
-.light-theme select,
-.light-theme textarea {
-  background-color: #ffffff !important;
-  color: #000 !important;
-  border: 1px solid #ccc !important;
-}
-
-/* Buttons */
-.light-theme .btn,
-.light-theme button {
-  background-color: #007bff !important;
-  color: #fff !important;
-}
-
-/* Tooltip / Misc */
-.light-theme h1,
-.light-theme h2,
-.light-theme h3,
-.light-theme h4,
-.light-theme h5,
-.light-theme h6,
-.light-theme p,
-.light-theme span,
-.light-theme label {
-  color: #000 !important;
-}
-
-/* Fix entire page behind sidebar */
-.light-theme .app-container {
-  background-color: #f5f5f5 !important;
+.app-footer a {
+  color: #00ffcc;
+  text-decoration: none;
 }

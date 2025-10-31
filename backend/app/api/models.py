@@ -1,75 +1,68 @@
 # backend/app/api/models.py
-import logging 
-from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import StreamingResponse # Import this
-from typing import List, AsyncGenerator, Optional
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-import json
-from fastapi import Depends
-from app.core.auth0_middleware import auth0_guard
+from typing import List, Dict, Any
+
+from app.api.auth import get_current_user, require_auth_user
 from app.services import ollama_service
 
 router = APIRouter()
 
-class ModelResponse(BaseModel):
-    name: str
-
-class LoadRequest(BaseModel):
-    model_name: str
-    adapter_name: Optional[str] = None
-# --- THIS IS THE ENDPOINT THAT'S NOT BEING FOUND ---
-@router.get("/", dependencies=[Depends(auth0_guard)])
-def get_available_models():
-    try:
-        logging.info("GET /api/models called")
-        models = ollama_service.list_local_models()
-        logging.info(f"Models returned: {models}")
-        return models
-    except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Could not connect to Ollama service: {e}")
-# ----------------------------------------------------
-
-@router.post("/load")
-async def load_model_to_memory(request: LoadRequest):
-    """
-    Loads base model, optionally applying LoRA via temporary model.
-    """
-    try:
-        return await ollama_service.set_active_model(request.model_name, request.adapter_name)
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=str(e))
-
+# ------------------------------
+# Schemas
+# ------------------------------
 class PromptRequest(BaseModel):
-    model_name: str
     prompt_text: str
-    max_tokens: int = 512
+    max_tokens: int = 256
 
-@router.post("/prompt/")
+# ------------------------------
+# Routes
+# ------------------------------
+
+@router.get("/", response_model=List[Dict[str, Any]])
+async def list_models():
+    """
+    Public. Returns local Ollama models for dropdowns etc.
+    Also used by Training page to populate base model dropdown.
+    """
+    return ollama_service.list_local_models()
+
+
 @router.post("/prompt")
-async def run_model_prompt(request: PromptRequest) -> StreamingResponse:
+async def run_prompt(req: PromptRequest, user=Depends(get_current_user)):
     """
-    Runs a prompt against a specified model.
-    This endpoint will stream the response back to the client.
+    Chat endpoint for Model Hub:
+    - anonymous  -> granite4 (Ollama)
+    - logged in  -> MiniMax M2
+    Returns {"text": "..."} single-shot response.
     """
-    try:
-        stream = ollama_service.run_prompt(
-            model_name=request.model_name,
-            prompt_text=request.prompt_text,
-            max_tokens=request.max_tokens,
-        )
-        
-        # We need a generator function to wrap the stream for StreamingResponse
-        async def response_generator():
-            async for chunk in stream:
-                yield json.dumps({"response": chunk["response"]}) + "\n"
-        return StreamingResponse(response_generator(), media_type="application/x-ndjson")
-        
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error running prompt: {e}",
-        )
+    if not req.prompt_text.strip():
+        raise HTTPException(status_code=400, detail="Prompt cannot be empty.")
+
+    text = ollama_service.run_chat(
+        prompt_text=req.prompt_text.strip(),
+        max_tokens=req.max_tokens,
+        user=user,
+    )
+
+    # 🔧 Fix duplicate word bug:
+    # Some models sometimes echo like "Hello Hello" at the start.
+    # We'll do a light dedupe of immediate word pairs at the beginning.
+    # Only first ~20 tokens so we don't destroy legit repetition mid-sentence.
+    import re
+    tokens = text.split()
+    cleaned_tokens = []
+    i = 0
+    while i < len(tokens):
+        if i+1 < len(tokens) and tokens[i+1].lower() == tokens[i].lower():
+            cleaned_tokens.append(tokens[i])
+            i += 2
+        else:
+            cleaned_tokens.append(tokens[i])
+            i += 1
+        if len(cleaned_tokens) > 20:  # stop aggressive dedupe after 20 words
+            cleaned_tokens.extend(tokens[i:])
+            break
+    cleaned = " ".join(cleaned_tokens)
+
+    return {"text": cleaned}

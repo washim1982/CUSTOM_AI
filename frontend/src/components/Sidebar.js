@@ -4,37 +4,28 @@ import { Link } from "react-router-dom";
 import { FaKey, FaDatabase, FaFileCsv, FaImage, FaCog } from "react-icons/fa";
 import { BsBoxes, BsTools } from "react-icons/bs";
 import "./Sidebar.css";
+import { NavLink } from 'react-router-dom';
+import { useAuth0 } from "@auth0/auth0-react";
 
 const Sidebar = ({ isOpen }) => {
+  const { isAuthenticated } = useAuth0();
+
+// const Sidebar = ({ isOpen }) => {
   return (
     <aside className={`sidebar ${isOpen ? "open" : "collapsed"}`}>
-      <div className="sidebar-inner">
-        <h1 className="sidebar-title" style={{textAlign: "center" }}yle>AI Toolkit</h1>
+      <div className="sidebar-content">
+        <h1 className="sidebar-title" style={{textAlign: "center" }}>AI Toolkit</h1>
 
-        <nav className="sidebar-links">
-
-          <Link to="/auth" className="sidebar-link">
-          <FaKey /> <span>Authentication</span>
-            </Link>
-          <Link to="/models" className="sidebar-link">
-            <BsBoxes /> <span>Model Hub</span>
-          </Link>
-          <Link to="/training" className="sidebar-link">
-            <BsTools /> <span>Custom Model Training</span>
-          </Link>
-          <Link to="/sql-trainer" className="sidebar-link">
-            <FaDatabase /> <span>SQL Trainer</span>
-          </Link>
-          <Link to="/analysis" className="sidebar-link">
-            <FaFileCsv /> <span>File Analytics</span>
-          </Link>
-          <Link to="/ocr" className="sidebar-link">
-            <FaImage /> <span>Image OCR</span>
-          </Link>
-          <Link to="/settings" className="sidebar-link">
-            <FaCog /> <span>Settings</span>
-          </Link>
-        </nav>
+        <NavLink to="/models">🧠 Model Hub</NavLink>
+        {isAuthenticated && (
+          <>
+            <NavLink to="/training">⚙️ Custom Model Training</NavLink>
+            <NavLink to="/sql-trainer">🗃 SQL Trainer</NavLink>
+            <NavLink to="/analysis">📊 File Analytics</NavLink>
+            <NavLink to="/ocr">🖼 Image OCR</NavLink>
+            <NavLink to="/settings">⚙️ Settings</NavLink>
+          </>
+        )}
       </div>
     </aside>
   );

@@ -1,39 +1,48 @@
-# app/api/chat_history.py
-from fastapi import APIRouter, Depends
+# backend/app/api/chat_history.py
+from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Dict, Any
 from pydantic import BaseModel
-#from app.auth import get_current_user
-from typing import List
-from pydantic import BaseModel
-router = APIRouter(prefix="/api/chat-history", tags=["Chat History"])
-chat_store = {}
-class Chat(BaseModel):
+from app.api.auth import require_auth_user
+
+router = APIRouter()
+
+# In-memory store for now
+_CHAT_STORE: Dict[str, List[Dict[str, str]]] = {}
+
+class ChatMessage(BaseModel):
+    sender: str   # "user" | "model"
+    text: str
+
+class ChatConversation(BaseModel):
     id: str
     title: str
-    messages: list
+    messages: List[ChatMessage]
+
+@router.get("/", response_model=List[ChatConversation])
+async def list_chats(user=Depends(require_auth_user)):
+    """
+    Protected. Return all chats for this user.
+    """
+    uid = user.get("sub")
+    return _CHAT_STORE.get(uid, [])
 
 
+@router.post("/", response_model=ChatConversation)
+async def save_chat(conv: ChatConversation, user=Depends(require_auth_user)):
+    """
+    Protected. Save or upsert a chat convo for this user.
+    """
+    uid = user.get("sub")
+    if not uid:
+        raise HTTPException(status_code=400, detail="Missing user subject in token")
 
-@router.get("/")
-def list_chats(user: str = "default_user"):
-    return chat_store.get(user, [])
-
-@router.post("/")
-def save_chat(chat: Chat, user: str = "default_user"):
-    if user not in chat_store:
-        chat_store[user] = []
-    existing = next((c for c in chat_store[user] if c["id"] == chat.id), None)
-    if existing:
-        existing.update(chat.dict())
+    user_chats = _CHAT_STORE.setdefault(uid, [])
+    # upsert by id
+    for idx, existing in enumerate(user_chats):
+        if existing["id"] == conv.id:
+            user_chats[idx] = conv.dict()
+            break
     else:
-        chat_store[user].append(chat.dict())
-    return {"status": "ok"}
+        user_chats.append(conv.dict())
 
-@router.get("/{chat_id}")
-def get_chat(chat_id: str, user: str = "default_user"):
-    return next((c for c in chat_store.get(user, []) if c["id"] == chat_id), {})
-
-@router.delete("/{chat_id}")
-def delete_chat(chat_id: str, user: str = "default_user"):
-    if user in chat_store:
-        chat_store[user] = [c for c in chat_store[user] if c["id"] != chat_id]
-    return {"status": "deleted"}
+    return conv
